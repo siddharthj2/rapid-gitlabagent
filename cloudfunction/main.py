@@ -310,12 +310,12 @@ async function diagnose() {
     addStep("OK", `Retrieved ${log.length.toLocaleString()} characters of execution logs`, "ok");
     addStep("OK", "Root cause identified", "ok");
 
-    let diagnosis = `Job: ${failed.name}\nStage: ${failed.stage}\nFailure Reason: ${failed.failure_reason || "script_failure"}\n\n`;
-    const errLines = log.split("\n").filter(l => /(error|ERR|ERROR|failed|FAILED)/i.test(l)).slice(0, 8).join("\n");
-    if (errLines) diagnosis += `Key Error Lines:\n${errLines}\n\n`;
+    let diagnosis = `Job: ${failed.name}\\nStage: ${failed.stage}\\nFailure Reason: ${failed.failure_reason || "script_failure"}\\n\\n`;
+    const errLines = log.split("\\n").filter(l => /(error|ERR|ERROR|failed|FAILED)/i.test(l)).slice(0, 8).join("\\n");
+    if (errLines) diagnosis += `Key Error Lines:\\n${errLines}\\n\\n`;
 
     if (log.includes("package-lock.json")) {
-      diagnosis += `Root Cause:\n"npm ci" requires a package-lock.json file which is missing.\n\nFix:\n1. Run "npm install" locally\n2. Commit the generated package-lock.json to the repository\n3. Re-run the pipeline`;
+      diagnosis += `Root Cause:\\n"npm ci" requires a package-lock.json file which is missing.\\n\\nFix:\\n1. Run "npm install" locally\\n2. Commit the generated package-lock.json to the repository\\n3. Re-run the pipeline`;
     } else {
       diagnosis += `Review the key error lines above to determine the root cause.`;
     }
