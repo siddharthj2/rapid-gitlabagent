@@ -187,4 +187,11 @@ def gitlab_mcp(request: Request):
             result = data
         return (json.dumps(result), status, cors_headers)
 
+    if path == "" or path == "/":
+        return (json.dumps({
+            "status": "online", 
+            "service": "GitLab MCP Proxy",
+            "message": "This API is active and securely routing requests for the Google Cloud Conversational Agent."
+        }), 200, cors_headers)
+
     return (json.dumps({"error": f"Unknown route: {path}"}), 404, cors_headers)
