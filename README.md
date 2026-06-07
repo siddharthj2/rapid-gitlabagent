@@ -7,8 +7,7 @@ An AI-powered Conversational Agent that **autonomously diagnoses GitLab CI/CD pi
 ---
 
 ## 🎥 Demo Video
-
-> *(Link to be added after recording)*
+https://youtu.be/AaReo-3TuKE
 
 ---
 
