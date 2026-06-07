@@ -1,0 +1,238 @@
+openapi: 3.0.0
+info:
+  title: GitLab Pipeline API
+  description: Read-only GitLab API for pipeline diagnostics
+  version: 1.0.0
+servers:
+  - url: https://gitlab.com/api/v4
+
+paths:
+  /projects:
+    get:
+      operationId: listProjects
+      summary: Search for a GitLab project by name
+      parameters:
+        - name: search
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Project name or path to search for
+        - name: membership
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: If true, only return projects the user is a member of
+      responses:
+        "200":
+          description: List of matching projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      description: Numeric project ID
+                    name:
+                      type: string
+                      description: Project name
+                    path_with_namespace:
+                      type: string
+                      description: Full project path including group
+                    web_url:
+                      type: string
+                      description: URL to the project on GitLab
+
+  /projects/{id}/pipelines:
+    get:
+      operationId: listProjectPipelines
+      summary: List pipelines for a project, optionally filtered by status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Numeric project ID (pass as string)
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [created, waiting_for_resource, preparing, pending, running, success, failed, canceled, skipped, manual, scheduled]
+          description: Filter pipelines by status
+        - name: ref
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter pipelines by branch or tag name
+        - name: per_page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 5
+          description: Number of results to return
+      responses:
+        "200":
+          description: List of pipelines
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      description: Pipeline ID
+                    iid:
+                      type: integer
+                      description: Pipeline internal ID within project
+                    status:
+                      type: string
+                      description: Pipeline status (e.g. failed, success)
+                    ref:
+                      type: string
+                      description: Branch or tag name
+                    sha:
+                      type: string
+                      description: Commit SHA that triggered the pipeline
+                    created_at:
+                      type: string
+                      description: Timestamp when the pipeline was created
+                    web_url:
+                      type: string
+                      description: URL to view the pipeline in GitLab
+
+  /projects/{id}/pipelines/{pipeline_id}/jobs:
+    get:
+      operationId: getPipelineJobs
+      summary: Get all jobs in a pipeline, to find which job failed
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Numeric project ID (use as string to avoid overflow)
+        - name: pipeline_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Pipeline ID (use as string to avoid overflow)
+        - name: scope
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter jobs by status scope
+      responses:
+        "200":
+          description: List of jobs in the pipeline
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      description: Job ID
+                    name:
+                      type: string
+                      description: Job name as defined in .gitlab-ci.yml
+                    stage:
+                      type: string
+                      description: Stage name (e.g. build, test, deploy)
+                    status:
+                      type: string
+                      description: Job status
+                    duration:
+                      type: number
+                      description: Job duration in seconds
+                    web_url:
+                      type: string
+                      description: URL to view the job in GitLab
+                    failure_reason:
+                      type: string
+                      description: Reason the job failed if applicable
+
+  /projects/{id}/jobs/{job_id}/trace:
+    get:
+      operationId: getJobTrace
+      summary: Get the raw log output for a specific job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Numeric project ID (pass as string)
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Job ID from getPipelineJobs (NOT the pipeline ID)
+      responses:
+        "200":
+          description: Raw job log text
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: Full raw log output of the job
+
+  /projects/{id}/repository/commits/{sha}:
+    get:
+      operationId: getCommit
+      summary: Get commit details for context on what changed
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Numeric project ID
+        - name: sha
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Commit SHA
+      responses:
+        "200":
+          description: Commit details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Commit SHA
+                  title:
+                    type: string
+                    description: Commit title (first line of message)
+                  message:
+                    type: string
+                    description: Full commit message
+                  author_name:
+                    type: string
+                    description: Name of the author
+                  authored_date:
+                    type: string
+                    description: When the commit was authored
+                  web_url:
+                    type: string
+                    description: URL to view the commit
+
+security: []

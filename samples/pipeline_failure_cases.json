@@ -1,0 +1,54 @@
+[
+  {
+    "case_id": "dependency-lockfile-mismatch",
+    "pipeline_id": 8241,
+    "branch": "main",
+    "job_name": "install_dependencies",
+    "stage": "build",
+    "commit": "5c1a7f2",
+    "summary": "Node dependency install failed due to package lock mismatch.",
+    "log_excerpt": "npm ERR! `npm ci` can only install packages when your package.json and package-lock.json are in sync.",
+    "expected_root_cause": "The dependency manifest changed without a matching lockfile update.",
+    "expected_confidence": "high",
+    "expected_actions": [
+      "Regenerate and commit the lockfile.",
+      "Verify no manual edits left the dependency files inconsistent.",
+      "Rerun the pipeline after updating the lockfile."
+    ]
+  },
+  {
+    "case_id": "python-import-error",
+    "pipeline_id": 8242,
+    "branch": "feature/auth-refactor",
+    "job_name": "unit_tests",
+    "stage": "test",
+    "commit": "af91d32",
+    "summary": "Python tests failed with a module import error.",
+    "log_excerpt": "ModuleNotFoundError: No module named 'services.auth.client'",
+    "expected_root_cause": "A refactor changed module paths or packaging without updating imports or install configuration.",
+    "expected_confidence": "medium",
+    "expected_actions": [
+      "Check the renamed module path in the latest commit.",
+      "Verify package installation and PYTHONPATH setup in CI.",
+      "Update imports or packaging metadata before rerunning tests."
+    ]
+  },
+  {
+    "case_id": "deploy-healthcheck-timeout",
+    "pipeline_id": 8243,
+    "branch": "release/june",
+    "job_name": "deploy_production",
+    "stage": "deploy",
+    "commit": "c4d9ab8",
+    "summary": "Deployment failed because the service never became healthy.",
+    "log_excerpt": "Health check failed: service did not start listening on port 8080 within timeout.",
+    "expected_root_cause": "The service failed to boot correctly or did not bind to the expected port in time.",
+    "expected_confidence": "medium",
+    "expected_actions": [
+      "Inspect startup logs for application boot errors.",
+      "Verify the service is configured to bind to the expected port.",
+      "Check required environment variables and secrets."
+    ]
+  }
+]
+

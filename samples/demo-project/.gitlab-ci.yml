@@ -1,0 +1,40 @@
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  NODE_VERSION: "18"
+
+# This job will FAIL intentionally - package-lock.json is out of sync
+install_dependencies:
+  stage: build
+  image: node:18-alpine
+  script:
+    - echo "Installing dependencies..."
+    - npm ci
+  artifacts:
+    paths:
+      - node_modules/
+    expire_in: 1 hour
+
+unit_tests:
+  stage: test
+  image: node:18-alpine
+  needs: [install_dependencies]
+  script:
+    - echo "Running unit tests..."
+    - npm test
+  coverage: '/Coverage: \d+\.\d+%/'
+
+deploy_production:
+  stage: deploy
+  image: alpine:3.18
+  needs: [unit_tests]
+  only:
+    - main
+  script:
+    - echo "Deploying to production..."
+    - echo "Health check passed."
+  environment:
+    name: production

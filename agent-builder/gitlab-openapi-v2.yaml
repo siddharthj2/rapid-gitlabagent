@@ -1,0 +1,226 @@
+openapi: 3.0.0
+info:
+  title: GitLab Pipeline MCP Proxy
+  description: >
+    A Cloud Function proxy that calls the GitLab API on behalf of the agent.
+    The GitLab token is stored securely in the Cloud Function environment.
+    No authentication needed here - the proxy handles it.
+  version: 2.0.0
+servers:
+  - url: https://gitlab-mcp-proxy-87907563812.us-central1.run.app
+
+paths:
+  /projects:
+    get:
+      operationId: listProjects
+      summary: Search for a GitLab project by name or path
+      parameters:
+        - name: search
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Project name or namespace/path to search for
+        - name: membership
+          in: query
+          required: false
+          schema:
+            type: string
+            default: "true"
+          description: Set to true to only return projects the user is a member of
+      responses:
+        "200":
+          description: List of matching projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: Numeric project ID to use in all subsequent calls
+                    name:
+                      type: string
+                    path_with_namespace:
+                      type: string
+                      description: Full path like group/project-name
+                    web_url:
+                      type: string
+                    description:
+                      type: string
+
+  /projects/{id}/pipelines:
+    get:
+      operationId: listProjectPipelines
+      summary: List recent pipelines for a project, filtered by status or branch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Numeric project ID
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Filter by: failed, success, running, pending, canceled"
+        - name: ref
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by branch name e.g. main
+      responses:
+        "200":
+          description: List of pipelines
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: Pipeline ID - use this for getPipelineJobs
+                    iid:
+                      type: string
+                      description: Project-local pipeline number
+                    status:
+                      type: string
+                      description: "failed, success, running, etc."
+                    ref:
+                      type: string
+                      description: Branch name
+                    sha:
+                      type: string
+                      description: Short commit SHA
+                    created_at:
+                      type: string
+                      description: When the pipeline started
+                    web_url:
+                      type: string
+                      description: Link to view in GitLab
+
+  /projects/{id}/pipelines/{pipeline_id}/jobs:
+    get:
+      operationId: getPipelineJobs
+      summary: List all jobs in a pipeline to identify which job failed
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Numeric project ID
+        - name: pipeline_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Pipeline ID from listProjectPipelines
+      responses:
+        "200":
+          description: List of jobs with their IDs - use job ID (not pipeline ID) for getJobTrace
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: Job ID - THIS is what you pass to getJobTrace
+                    name:
+                      type: string
+                      description: Job name from .gitlab-ci.yml
+                    stage:
+                      type: string
+                      description: Stage name e.g. build, test, deploy
+                    status:
+                      type: string
+                      description: Job status
+                    duration:
+                      type: number
+                      description: Duration in seconds
+                    failure_reason:
+                      type: string
+                      description: Why the job failed if applicable
+                    web_url:
+                      type: string
+                      description: Link to view job in GitLab
+
+  /projects/{id}/jobs/{job_id}/trace:
+    get:
+      operationId: getJobTrace
+      summary: Get the raw error log for a failed job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Numeric project ID
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Job ID from getPipelineJobs - NOT the pipeline ID
+      responses:
+        "200":
+          description: Job log output
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  log:
+                    type: string
+                    description: The last 3000 characters of the job log
+                  truncated:
+                    type: boolean
+                    description: True if the log was truncated
+
+  /projects/{id}/repository/commits/{sha}:
+    get:
+      operationId: getCommit
+      summary: Get commit details to understand what changed
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sha
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Commit details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  title:
+                    type: string
+                  message:
+                    type: string
+                  author_name:
+                    type: string
+                  authored_date:
+                    type: string
+                  web_url:
+                    type: string
+
+security: []
